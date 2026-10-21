@@ -1,0 +1,111 @@
+[
+  {
+    "id": "welcome-discussion",
+    "title": "Welcome to the One Lab Community! What projects are you working on?",
+    "content": "Welcome everyone! This community is open to all discussions across media editing, visual design, audio engineering, automation, and AI workflows. Feel free to ask technical questions, request project critiques, or share useful workflows and prompt templates. Introduce yourself and what tools you use daily!",
+    "author_name": "One Lab Team",
+    "author_role": "admin",
+    "author_avatar": null,
+    "likes_count": 52,
+    "comments_count": 12,
+    "views_count": 640,
+    "is_pinned": true,
+    "created_at": "2026-10-18T20:30:48.609Z",
+    "tags": [
+      "welcome",
+      "community",
+      "projects"
+    ]
+  },
+  {
+    "id": "export-settings-workflow",
+    "title": "What is your go-to media export workflow for highest quality vs file size?",
+    "content": "I am balancing bitrate and render times across multiple media projects. What settings and codecs do you find strike the best balance between crisp visual quality and manageable upload file sizes?",
+    "author_name": "Hamza Tariq",
+    "author_role": "pro",
+    "author_avatar": null,
+    "likes_count": 38,
+    "comments_count": 7,
+    "views_count": 420,
+    "is_pinned": false,
+    "created_at": "2026-10-19T20:30:48.609Z",
+    "tags": [
+      "workflow",
+      "media",
+      "export",
+      "quality"
+    ]
+  },
+  {
+    "id": "ctr-psychology",
+    "title": "What is your target Click-Through Rate (CTR) for YouTube thumbnails?",
+    "content": "I have been testing different styles using the One Lab Thumbnail Maker. My impressions went up, but my CTR on browse features is hovering around 5.4%. What CTR do you consider a green flag in the first 24 hours of publishing? What tweaks make the biggest difference for you?",
+    "author_name": "Farhan Ali",
+    "author_role": "member",
+    "author_avatar": null,
+    "likes_count": 26,
+    "comments_count": 6,
+    "views_count": 310,
+    "is_pinned": false,
+    "created_at": "2026-10-20T08:30:48.609Z",
+    "tags": [
+      "thumbnails",
+      "ctr",
+      "analytics"
+    ]
+  },
+  {
+    "id": "shorts-pacing-tips",
+    "title": "How to keep Short-form retention above 80%? Where are people dropping off?",
+    "content": "When looking at YouTube Studio audience retention curves on my Shorts, I see a sharp 30% drop right at second 3 to 4. What do you do in the first 3 seconds to lock viewers in? Fast zoom? Sound effect? Text hook?",
+    "author_name": "Zayd Khan",
+    "author_role": "member",
+    "author_avatar": null,
+    "likes_count": 31,
+    "comments_count": 9,
+    "views_count": 450,
+    "is_pinned": false,
+    "created_at": "2026-10-20T20:30:48.609Z",
+    "tags": [
+      "shorts",
+      "retention",
+      "editing"
+    ]
+  },
+  {
+    "id": "groq-prompt-formula",
+    "title": "What are your best AI prompts for generating viral video ideas and hooks?",
+    "content": "Most generic ChatGPT prompts give boring results like '5 tips to be productive'. Has anyone built a good prompt template for Groq or Claude that generates contrarian or curiosity-driven titles and hooks?",
+    "author_name": "Bilal Ahmed",
+    "author_role": "pro",
+    "author_avatar": null,
+    "likes_count": 45,
+    "comments_count": 8,
+    "views_count": 580,
+    "is_pinned": false,
+    "created_at": "2026-10-21T08:30:48.609Z",
+    "tags": [
+      "ai",
+      "prompts",
+      "scriptwriting"
+    ]
+  },
+  {
+    "id": "microphone-noise-removal",
+    "title": "How to remove background fan/room noise from microphone recordings cleanly?",
+    "content": "Recording in a room with PC fan noise and mild reverb. Are you using AI noise removal tools or OBS / Audacity noise gates? Does AI transcription or voice cloning work better if audio is pre-cleaned?",
+    "author_name": "Sarah Jenkins",
+    "author_role": "member",
+    "author_avatar": null,
+    "likes_count": 19,
+    "comments_count": 4,
+    "views_count": 240,
+    "is_pinned": false,
+    "created_at": "2026-10-21T13:30:48.609Z",
+    "tags": [
+      "audio",
+      "microphone",
+      "sound"
+    ]
+  }
+]

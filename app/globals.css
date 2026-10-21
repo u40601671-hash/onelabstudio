@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-white font-sans font-normal text-slate-700 antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  @apply font-display tracking-tight text-slate-900 font-bold;
+}
+
+/* Crisp Light Mode Form Controls */
+select, option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+input[type="file"]::file-selector-button {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Subtle Modern Light Grid */
+.cyber-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(59, 130, 246, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.035) 1px, transparent 1px);
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-200 cursor-pointer;
+  }
+  /* Electric Cobalt-Cyan Gradient Button */
+  .btn-primary {
+    @apply btn border border-blue-600 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 text-white font-bold shadow-lg shadow-blue-500/25 hover:shadow-cyan-500/35 hover:scale-[1.02] active:scale-[0.98];
+  }
+  .btn-outline {
+    @apply btn border border-slate-300 bg-white text-slate-800 shadow-sm hover:border-blue-600 hover:bg-blue-50/50 hover:text-blue-700 hover:scale-[1.01] active:scale-[0.99];
+  }
+  .btn-cyan {
+    @apply btn border border-cyan-400 bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400 shadow-md shadow-cyan-500/20;
+  }
+  .btn-white {
+    @apply btn border border-slate-200 bg-white text-slate-900 shadow-md hover:bg-slate-50;
+  }
+  /* Modern High-End White Glass Card */
+  .card {
+    @apply rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm transition-all duration-300 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1;
+  }
+  .wrap {
+    @apply mx-auto max-w-6xl px-5;
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-600;
+  }
+  .eyebrow-plain {
+    @apply text-xs font-bold uppercase tracking-[0.2em] text-blue-600;
+  }
+  .section-title {
+    @apply mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl;
+  }
+  .section-sub {
+    @apply mx-auto mt-3 max-w-xl text-base leading-relaxed text-slate-600;
+  }
+  .icon-tile {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xl text-blue-600 ring-1 ring-blue-500/20;
+  }
+  /* Luminous Cobalt-Cyan Gradient Text on Light Mode */
+  .gold-text {
+    @apply bg-gradient-to-r from-blue-600 via-cyan-600 to-indigo-600 bg-clip-text text-transparent;
+  }
+}

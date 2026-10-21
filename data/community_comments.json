@@ -1,0 +1,30 @@
+{
+  "welcome-discussion": [
+    {
+      "id": "c-100",
+      "author_name": "Bilal Ahmed",
+      "author_role": "pro",
+      "content": "Great to have this open space! Working on several video editing workflows and audio mastering setups. Excited to exchange tips with everyone.",
+      "created_at": "2026-10-19T20:30:48.609Z",
+      "likes_count": 9
+    },
+    {
+      "id": "c-101",
+      "author_name": "Hamza Tariq",
+      "author_role": "member",
+      "content": "Building an automated channel for documentary-style history shorts. The music library and caption tool are saving me hours.",
+      "created_at": "2026-10-20T20:30:48.609Z",
+      "likes_count": 6
+    }
+  ],
+  "export-settings-workflow": [
+    {
+      "id": "c-201",
+      "author_name": "One Lab Team",
+      "author_role": "admin",
+      "content": "For 1080p 60fps Shorts, H.264 Main profile at 12–15 Mbps with 2-pass VBR gives nearly lossless sharpness without file bloat. For 4K long-form, HEVC (H.265) at 35–45 Mbps is ideal.",
+      "created_at": "2026-10-20T01:18:48.609Z",
+      "likes_count": 14
+    }
+  ]
+}
