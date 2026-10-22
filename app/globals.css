@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 85% Desktop Zoom Scaling for Crisp Compact SaaS Aesthetic */
+@media (min-width: 1024px) {
+  html {
+    zoom: 0.85;
+  }
+}
+
 body {
   @apply bg-white font-sans font-normal text-slate-700 antialiased;
   text-rendering: optimizeLegibility;

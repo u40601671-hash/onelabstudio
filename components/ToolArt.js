@@ -266,14 +266,13 @@ export default function ToolArt({ tool, className = "" }) {
   const imgSrc = toolThumbnails[tool?.slug];
   if (imgSrc) {
     return (
-      <div className={`relative overflow-hidden bg-slate-950 ${className}`}>
+      <div className={`relative w-full h-full overflow-hidden bg-slate-900 ${className}`}>
         <img
           src={imgSrc}
           alt={tool?.name || "Tool Showcase"}
           className="h-full w-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
           loading="lazy"
         />
-        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-slate-950/40 via-transparent to-transparent opacity-60" />
       </div>
     );
   }

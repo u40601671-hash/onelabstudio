@@ -5,9 +5,9 @@ export default function ToolCard({ tool }) {
   const paid = tool.access === "paid";
   const href = `/tools/${tool.slug}`;
   return (
-    <div className="card group flex h-full flex-col overflow-hidden !p-0 hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10">
-      <Link href={href} className="relative block overflow-hidden bg-slate-950 border-b border-slate-100" aria-label={`Open ${tool.name}`}>
-        <ToolArt tool={tool} className="h-48 w-full" />
+    <div className="card group flex h-full flex-col overflow-hidden !p-0 border border-slate-200/90 bg-white shadow-sm hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
+      <Link href={href} className="relative block w-full aspect-video overflow-hidden bg-slate-100 border-b border-slate-100" aria-label={`Open ${tool.name}`}>
+        <ToolArt tool={tool} className="w-full h-full" />
         <span
           className={`absolute left-3 top-3 rounded-md px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-white shadow-md backdrop-blur-md ${
             paid ? "bg-amber-600/90" : "bg-emerald-600/90"
