@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { supabaseConfigured } from "@/lib/supabase/config";
 
 export default function MusicVault() {
   const [activeTab, setActiveTab] = useState("all"); // 'all' | 'music' | 'sfx'
@@ -22,7 +25,8 @@ export default function MusicVault() {
   const [isLooping, setIsLooping] = useState(false);
   const audioRef = useRef(null);
 
-  // API Key management state
+  // API Key & User Auth state
+  const [currentUser, setCurrentUser] = useState(null);
   const [showApiModal, setShowApiModal] = useState(false);
   const [apiKeys, setApiKeys] = useState([]);
   const [newKeyName, setNewKeyName] = useState("");
@@ -33,6 +37,7 @@ export default function MusicVault() {
   const [apiTestResponse, setApiTestResponse] = useState(null);
   const [testingApi, setTestingApi] = useState(false);
   const [selectedLang, setSelectedLang] = useState("curl"); // 'curl' | 'python' | 'node'
+  const [revealedKeys, setRevealedKeys] = useState({});
 
   // Fetch catalog tracks
   useEffect(() => {
@@ -75,16 +80,61 @@ export default function MusicVault() {
     };
   }, [activeTab, selectedCategory, searchQuery, page]);
 
-  // Load existing API keys
+  // Track authenticated user session
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUser(data?.user || null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user || null;
+      setCurrentUser(u);
+      if (u) {
+        loadKeys();
+      } else {
+        setApiKeys([]);
+      }
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Load existing API keys (Only for authenticated user)
   const loadKeys = async () => {
     try {
       const res = await fetch("/api/v1/music/keys");
+      if (res.status === 401) {
+        setApiKeys([]);
+        return;
+      }
       const data = await res.json();
       if (data.status === "success") {
         setApiKeys(data.keys || []);
       }
     } catch (e) {
       console.error("Error fetching keys:", e);
+    }
+  };
+
+  const handleRevokeKey = async (keyString) => {
+    if (!confirm("Are you sure you want to revoke this API key? Any bots using this key will immediately lose access.")) return;
+    try {
+      const res = await fetch("/api/v1/music/keys", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: keyString }),
+      });
+      const data = await res.json();
+      if (data.status === "success") {
+        if (generatedKey?.key === keyString) setGeneratedKey(null);
+        loadKeys();
+      } else {
+        alert(data.message || "Failed to revoke API key");
+      }
+    } catch (err) {
+      alert("Error revoking API key");
     }
   };
 
@@ -651,7 +701,7 @@ export default function MusicVault() {
                   <span>ols_music_live_...</span>
                 </div>
                 <h2 className="text-xl font-bold text-slate-900">
-                  Dedicated Music & SFX API
+                  Dedicated Music &amp; SFX API
                 </h2>
                 <p className="text-xs text-slate-500">
                   Generate dedicated API keys specifically for the Music tool. Connect your automated CapCut / Premiere / Python video editing bots.
@@ -665,111 +715,220 @@ export default function MusicVault() {
               </button>
             </div>
 
-            {/* Notice about dedicated tool-scoped API */}
-            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-800">
-              <div className="flex items-center gap-2 font-semibold">
-                <span>🛡️ Individual Tool Security</span>
+            {/* If NOT Logged In: Iron-Clad Account Required Security Gate */}
+            {!currentUser ? (
+              <div className="mt-5 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/70 via-indigo-50/30 to-slate-50 p-6 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 text-2xl">
+                  🔒
+                </div>
+                <h3 className="mt-4 text-lg font-bold text-slate-900">
+                  Account Required for Developer API Access
+                </h3>
+                <p className="mx-auto mt-2 max-w-lg text-xs leading-relaxed text-slate-600">
+                  To ensure <strong>100% private tenant isolation</strong>, prevent unauthorized scraping, and guarantee dedicated rate limits (<strong>1,000 calls/day</strong>), each Music API key is strictly bound to a verified account.
+                </p>
+
+                {/* 3 Privacy & Power Guarantees */}
+                <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-2xl mx-auto">
+                  <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+                    <div className="text-blue-600 text-xs font-bold flex items-center gap-1.5">
+                      <span>🛡️</span> Zero-Leak Privacy
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-500 leading-normal">
+                      Your keys and usage telemetry are encrypted and strictly invisible to any other user.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+                    <div className="text-emerald-600 text-xs font-bold flex items-center gap-1.5">
+                      <span>⚡</span> 1,000 Calls / Day
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-500 leading-normal">
+                      Dedicated high-speed streaming bandwidth for your CapCut, Premiere, or Python bots.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+                    <div className="text-indigo-600 text-xs font-bold flex items-center gap-1.5">
+                      <span>🔑</span> Instant Webhook
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-500 leading-normal">
+                      Generate, copy, and revoke keys in 1 click anytime directly from your dashboard.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link
+                    href="/signup?next=/tools/music-sfx-vault"
+                    className="btn-primary !py-2.5 !px-6 text-xs font-bold w-full sm:w-auto shadow-md"
+                  >
+                    Create Free Account &rarr;
+                  </Link>
+                  <Link
+                    href="/login?next=/tools/music-sfx-vault"
+                    className="btn-outline !py-2.5 !px-6 text-xs font-bold w-full sm:w-auto"
+                  >
+                    Log In to Existing Account
+                  </Link>
+                </div>
               </div>
-              <p className="mt-1 text-[11px] text-emerald-700 leading-relaxed">
-                This key only grants access to the <strong>Music & SFX Vault</strong>. As per system security design, each OneLab Studio tool has its own separate API key to prevent cross-tool authorization risks.
-              </p>
-            </div>
-
-            {/* Create New Key Section */}
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Generate New Music API Key
-              </h3>
-              <form onSubmit={handleCreateKey} className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <input
-                  type="text"
-                  placeholder="Bot or Project Name (e.g. YouTube Shorts Bot, Video Editor)"
-                  value={newKeyName}
-                  onChange={(e) => setNewKeyName(e.target.value)}
-                  className="flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={keyGenerating}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {keyGenerating ? "Creating..." : "+ Generate Key"}
-                </button>
-              </form>
-
-              {/* Freshly Generated Key Alert */}
-              {generatedKey && (
-                <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/70 p-3.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-blue-900">
-                      🎉 New API Key Generated for {generatedKey.name}:
-                    </span>
-                    <button
-                      onClick={() => copyToClipboard(generatedKey.key, "new")}
-                      className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-700"
-                    >
-                      {copiedKey === "new" ? "Copied!" : "Copy Key"}
-                    </button>
+            ) : (
+              /* Authenticated User: Private Isolated Key Manager */
+              <>
+                {/* User Session Banner */}
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50/80 px-4 py-2.5 text-xs text-blue-900">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="font-semibold text-slate-700">Developer Account:</span>
+                    <span className="font-mono font-bold text-blue-700">{currentUser.email}</span>
                   </div>
-                  <div className="mt-2 rounded-lg bg-white p-2 font-mono text-xs font-semibold text-blue-800 break-all select-all border border-blue-200/60">
-                    {generatedKey.key}
+                  <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-800 uppercase tracking-wider">
+                    <span>🔒</span> 100% Private Isolation Active
+                  </span>
+                </div>
+
+                {/* Notice about dedicated tool-scoped API */}
+                <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-emerald-800">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <span>🛡️ Individual Tool Security</span>
                   </div>
-                  <p className="mt-1.5 text-[10px] text-blue-600">
-                    Prefix: <code className="font-mono">ols_music_live_...</code> • Daily Limit: 1,000 calls
+                  <p className="mt-1 text-[11px] text-emerald-700 leading-relaxed">
+                    This key only grants access to the <strong>Music &amp; SFX Vault</strong>. As per system security design, each OneLab Studio tool has its own separate API key to prevent cross-tool authorization risks.
                   </p>
                 </div>
-              )}
-            </div>
 
-            {/* Existing Keys List */}
-            <div className="mt-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Your Active Music API Keys ({apiKeys.length})
-              </h3>
-              <div className="mt-2 space-y-2 max-h-44 overflow-y-auto pr-1">
-                {apiKeys.length === 0 ? (
-                  <p className="py-2 text-xs text-slate-400 italic">No keys created yet.</p>
-                ) : (
-                  apiKeys.map((k) => (
-                    <div
-                      key={k.key}
-                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-xs"
+                {/* Create New Key Section */}
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Generate New Music API Key
+                  </h3>
+                  <form onSubmit={handleCreateKey} className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      placeholder="Bot or Project Name (e.g. YouTube Shorts Bot, Video Editor)"
+                      value={newKeyName}
+                      onChange={(e) => setNewKeyName(e.target.value)}
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      disabled={keyGenerating}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 disabled:opacity-50"
                     >
-                      <div className="min-w-0 flex-1 pr-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-800">{k.name}</span>
-                          <span
-                            className={`rounded-full px-2 py-0.2 text-[9px] font-bold uppercase ${
-                              k.status === "active"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-rose-100 text-rose-700"
-                            }`}
-                          >
-                            {k.status}
-                          </span>
-                        </div>
-                        <div className="mt-1 font-mono text-[11px] text-slate-500 truncate">
-                          {k.key}
-                        </div>
-                      </div>
+                      {keyGenerating ? "Creating..." : "+ Generate Key"}
+                    </button>
+                  </form>
 
-                      <div className="flex items-center gap-2">
-                        <span className="hidden sm:inline text-[10px] text-slate-400">
-                          {k.requests_today} / {k.rate_limit} reqs
+                  {/* Freshly Generated Key Alert */}
+                  {generatedKey && (
+                    <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/70 p-3.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-blue-900">
+                          🎉 New API Key Generated for {generatedKey.name}:
                         </span>
                         <button
-                          onClick={() => copyToClipboard(k.key, k.key)}
-                          className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
+                          onClick={() => copyToClipboard(generatedKey.key, "new")}
+                          className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-700"
                         >
-                          {copiedKey === k.key ? "Copied!" : "Copy"}
+                          {copiedKey === "new" ? "Copied!" : "Copy Key"}
                         </button>
                       </div>
+                      <div className="mt-2 rounded-lg bg-white p-2 font-mono text-xs font-semibold text-blue-800 break-all select-all border border-blue-200/60">
+                        {generatedKey.key}
+                      </div>
+                      <p className="mt-1.5 text-[10px] text-blue-600">
+                        Prefix: <code className="font-mono">ols_music_live_...</code> • Daily Limit: 1,000 calls • Saved to your account
+                      </p>
                     </div>
-                  ))
-                )}
-              </div>
-            </div>
+                  )}
+                </div>
+
+                {/* Existing Keys List (Filtered Strictly to This User) */}
+                <div className="mt-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Your Private Music API Keys ({apiKeys.length})
+                    </h3>
+                    <span className="text-[10px] text-slate-400">
+                      Max 5 active keys allowed
+                    </span>
+                  </div>
+                  <div className="mt-2 space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {apiKeys.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">
+                        You have not generated any API keys yet. Enter a project name above to generate your first key.
+                      </div>
+                    ) : (
+                      apiKeys.map((k) => {
+                        const isRevealed = revealedKeys[k.key];
+                        const displayKey = isRevealed
+                          ? k.key
+                          : `${k.key.slice(0, 15)}••••••••••••${k.key.slice(-4)}`;
+                        return (
+                          <div
+                            key={k.key}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-xs shadow-2xs hover:border-slate-300 transition"
+                          >
+                            <div className="min-w-0 flex-1 pr-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900">{k.name}</span>
+                                <span
+                                  className={`rounded-full px-2 py-0.2 text-[9px] font-bold uppercase ${
+                                    k.status === "active"
+                                      ? "bg-emerald-100 text-emerald-700"
+                                      : "bg-rose-100 text-rose-700"
+                                  }`}
+                                >
+                                  {k.status}
+                                </span>
+                              </div>
+                              <div className="mt-1 flex items-center gap-2">
+                                <code className="font-mono text-[11px] text-slate-600 break-all select-all">
+                                  {displayKey}
+                                </code>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setRevealedKeys((prev) => ({
+                                      ...prev,
+                                      [k.key]: !prev[k.key],
+                                    }))
+                                  }
+                                  className="text-[10px] text-blue-600 hover:text-blue-800 underline shrink-0"
+                                >
+                                  {isRevealed ? "Hide" : "Reveal"}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[10px] font-medium text-slate-400">
+                                {k.requests_today} / {k.rate_limit} calls
+                              </span>
+                              <button
+                                onClick={() => copyToClipboard(k.key, k.key)}
+                                className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
+                              >
+                                {copiedKey === k.key ? "Copied!" : "Copy"}
+                              </button>
+                              {k.status === "active" && (
+                                <button
+                                  onClick={() => handleRevokeKey(k.key)}
+                                  className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-100"
+                                >
+                                  Revoke
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Quick Developer Code Snippets */}
             <div className="mt-6 border-t border-slate-100 pt-5">
@@ -809,12 +968,13 @@ export default function MusicVault() {
               <div className="relative mt-3 rounded-2xl bg-slate-900 p-4 font-mono text-xs text-slate-200">
                 <button
                   onClick={() => {
+                    const origin = typeof window !== "undefined" ? window.location.origin : "https://onelabstudio.vercel.app";
                     const code =
                       selectedLang === "curl"
-                        ? `curl -X GET "http://localhost:3000/api/v1/music/tracks?category=01_mystery_history&limit=5" \\\n  -H "x-api-key: ${activeDemoKey}"`
+                        ? `curl -X GET "${origin}/api/v1/music/tracks?category=01_mystery_history&limit=5" \\\n  -H "x-api-key: ${activeDemoKey}"`
                         : selectedLang === "python"
-                        ? `import requests\n\nheaders = {"x-api-key": "${activeDemoKey}"}\nres = requests.get("http://localhost:3000/api/v1/music/tracks", params={"category": "01_mystery_history", "limit": 5}, headers=headers)\ntracks = res.json()["tracks"]\nprint(f"Loaded {len(tracks)} tracks")`
-                        : `const res = await fetch("http://localhost:3000/api/v1/music/tracks?limit=5", {\n  headers: { "x-api-key": "${activeDemoKey}" }\n});\nconst data = await res.json();\nconsole.log(data.tracks);`;
+                        ? `import requests\n\nheaders = {"x-api-key": "${activeDemoKey}"}\nres = requests.get("${origin}/api/v1/music/tracks", params={"category": "01_mystery_history", "limit": 5}, headers=headers)\ntracks = res.json()["tracks"]\nprint(f"Loaded {len(tracks)} tracks")`
+                        : `const res = await fetch("${origin}/api/v1/music/tracks?limit=5", {\n  headers: { "x-api-key": "${activeDemoKey}" }\n});\nconst data = await res.json();\nconsole.log(data.tracks);`;
                     copyToClipboard(code, "code");
                     setCopiedCode(true);
                     setTimeout(() => setCopiedCode(false), 2000);
@@ -828,7 +988,7 @@ export default function MusicVault() {
                   {selectedLang === "curl" && (
                     <code>
 {`# Fetch Mystery & History tracks with your music key:
-curl -X GET "http://localhost:3000/api/v1/music/tracks?category=01_mystery_history&limit=5" \\
+curl -X GET "${typeof window !== "undefined" ? window.location.origin : "https://onelabstudio.vercel.app"}/api/v1/music/tracks?category=01_mystery_history&limit=5" \\
   -H "x-api-key: ${activeDemoKey}"`}
                     </code>
                   )}
@@ -836,7 +996,7 @@ curl -X GET "http://localhost:3000/api/v1/music/tracks?category=01_mystery_histo
                     <code>
 {`import requests
 
-url = "http://localhost:3000/api/v1/music/tracks"
+url = "${typeof window !== "undefined" ? window.location.origin : "https://onelabstudio.vercel.app"}/api/v1/music/tracks"
 headers = {"x-api-key": "${activeDemoKey}"}
 params = {"category": "01_mystery_history", "limit": 5}
 
@@ -849,7 +1009,7 @@ for track in data.get("tracks", []):
                   )}
                   {selectedLang === "node" && (
                     <code>
-{`const res = await fetch("http://localhost:3000/api/v1/music/tracks?limit=5", {
+{`const res = await fetch("${typeof window !== "undefined" ? window.location.origin : "https://onelabstudio.vercel.app"}/api/v1/music/tracks?limit=5", {
   headers: {
     "x-api-key": "${activeDemoKey}"
   }

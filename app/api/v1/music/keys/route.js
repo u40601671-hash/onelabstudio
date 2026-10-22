@@ -1,11 +1,35 @@
 import { NextResponse } from "next/server";
-import { loadMusicKeys, generateMusicApiKey, revokeMusicApiKey } from "@/lib/musicApiKey";
+import { getSession } from "@/lib/auth";
+import {
+  getUserMusicKeys,
+  generateMusicApiKey,
+  revokeUserMusicKey,
+} from "@/lib/musicApiKey";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * GET /api/v1/music/keys
+ * Returns ONLY the API keys that belong to the currently logged-in user.
+ * 100% Privacy: Unauthenticated users are rejected with 401; users never see others' keys.
+ */
 export async function GET() {
   try {
-    const data = loadMusicKeys();
-    // Return keys
-    const keys = (data.keys || []).map((k) => ({
+    const session = await getSession();
+    const user = session?.user;
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          status: "error",
+          error: "AUTH_REQUIRED",
+          message: "You must create a free account or log in to view and manage Music API keys.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const keys = getUserMusicKeys(user).map((k) => ({
       key: k.key,
       name: k.name,
       email: k.email,
@@ -20,10 +44,11 @@ export async function GET() {
     return NextResponse.json({
       status: "success",
       count: keys.length,
+      user_email: user.email,
       keys,
     });
   } catch (err) {
-    console.error("Error retrieving music keys:", err);
+    console.error("Error retrieving user music keys:", err);
     return NextResponse.json(
       { status: "error", message: "Failed to load music API keys" },
       { status: 500 }
@@ -31,13 +56,47 @@ export async function GET() {
   }
 }
 
+/**
+ * POST /api/v1/music/keys
+ * Generates a new dedicated API key for the authenticated user.
+ */
 export async function POST(request) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const name = body.name || "My Bot";
-    const email = body.email || "";
+    const session = await getSession();
+    const user = session?.user;
 
-    const newKey = generateMusicApiKey({ name, email });
+    if (!user) {
+      return NextResponse.json(
+        {
+          status: "error",
+          error: "AUTH_REQUIRED",
+          message: "Please sign in or create an account to generate a dedicated Music API key.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const name = (body.name || "My Bot").trim();
+
+    // Check key limit per user (max 5 active keys to prevent abuse)
+    const activeKeys = getUserMusicKeys(user).filter((k) => k.status === "active");
+    if (activeKeys.length >= 5) {
+      return NextResponse.json(
+        {
+          status: "error",
+          message: "You have reached the maximum limit of 5 active API keys per account. Please revoke an unused key first.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const newKey = generateMusicApiKey({
+      name,
+      email: user.email,
+      userId: user.id,
+      role: "client",
+    });
 
     return NextResponse.json({
       status: "success",
@@ -53,8 +112,22 @@ export async function POST(request) {
   }
 }
 
+/**
+ * DELETE /api/v1/music/keys
+ * Revokes a key owned by the authenticated user.
+ */
 export async function DELETE(request) {
   try {
+    const session = await getSession();
+    const user = session?.user;
+
+    if (!user) {
+      return NextResponse.json(
+        { status: "error", message: "Authentication required to revoke keys." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const key = body.key;
 
@@ -65,11 +138,14 @@ export async function DELETE(request) {
       );
     }
 
-    const success = revokeMusicApiKey(key);
+    const success = revokeUserMusicKey(key, user);
     if (!success) {
       return NextResponse.json(
-        { status: "error", message: "Key not found" },
-        { status: 404 }
+        {
+          status: "error",
+          message: "Key not found or you do not have permission to revoke this key.",
+        },
+        { status: 403 }
       );
     }
 
